@@ -42,9 +42,18 @@ def save_merchant(
     cursor.execute("""
 
     INSERT OR REPLACE INTO merchant_master
-
+    (
+        merchant_name,
+        normalized_name,
+        category,
+        sub_category,
+        merchant_type,
+        created_at,
+        is_active,
+        last_updated
+    )
     VALUES
-    (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
 
     """, (
         merchant,

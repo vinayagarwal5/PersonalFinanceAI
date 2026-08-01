@@ -1,30 +1,48 @@
-from ..python.services.database import get_connection
+try:
+    from services.database import get_connection
+except Exception:
+    # Support running this script directly (not as a package)
+    import sys
+    from pathlib import Path
 
-conn = get_connection()
-cursor = conn.cursor()
+    # Add the 'python' package directory to sys.path so 'services' can be imported
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from services.database import get_connection
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS merchant_master (
 
-    keyword TEXT PRIMARY KEY,
+def create_merchant_master():
 
-    normalized_name TEXT NOT NULL,
+    conn = get_connection()
+    cursor = conn.cursor()
 
-    category TEXT NOT NULL,
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS merchant_master (
 
-    merchant_type TEXT,
+        merchant_name TEXT PRIMARY KEY,
 
-    notes TEXT,
+        normalized_name TEXT NOT NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        category TEXT,
 
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
+        sub_category TEXT,
 
-conn.commit()
-conn.close()
+        merchant_type TEXT,
 
-print("=" * 50)
-print("Merchant Master table created successfully")
-print("=" * 50)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        is_active INTEGER DEFAULT 1,
+
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+    print("=" * 60)
+    print("Merchant Master table created successfully")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    create_merchant_master()

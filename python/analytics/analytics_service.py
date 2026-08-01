@@ -1,9 +1,15 @@
 import pandas as pd
-from services.database import get_connection
+try:
+    from ..services.database import get_connection
+except Exception:
+    # Support direct execution/import when package context is not available
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from services.database import get_connection
 
 
 class AnalyticsService:
-
     def __init__(self):
         self.conn = get_connection()
 
@@ -57,10 +63,7 @@ class AnalyticsService:
 
     def current_balance(self):
 
-        return round(
-            self.total_income() - self.total_spending(),
-            2
-        )
+        return round(self.total_income() - self.total_spending(), 2)
 
     # =====================================================
     # MONTHLY SPENDING
@@ -134,11 +137,7 @@ class AnalyticsService:
         LIMIT ?
         """
 
-        return pd.read_sql_query(
-            query,
-            self.conn,
-            params=(limit,)
-        )
+        return pd.read_sql_query(query, self.conn, params=(limit,))
 
     # =====================================================
     # RECENT TRANSACTIONS
@@ -158,8 +157,4 @@ class AnalyticsService:
         LIMIT ?
         """
 
-        return pd.read_sql_query(
-            query,
-            self.conn,
-            params=(limit,)
-        )
+        return pd.read_sql_query(query, self.conn, params=(limit,))

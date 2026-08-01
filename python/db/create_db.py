@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS ingested_files (
 """)
 
 cursor.execute("""
-
 CREATE TABLE IF NOT EXISTS merchant_master (
 
     merchant_name TEXT PRIMARY KEY,
@@ -71,12 +70,15 @@ CREATE TABLE IF NOT EXISTS merchant_master (
 
     merchant_type TEXT,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    is_active INTEGER DEFAULT 1,
+
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 );
 
 """)
-
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS merchant_categories (
 
