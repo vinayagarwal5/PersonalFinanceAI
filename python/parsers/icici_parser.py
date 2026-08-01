@@ -75,7 +75,7 @@ class ICICIParser(BasePDFParser):
 
             merchant = clean_merchant_name(description)
 
-details = get_merchant_details(merchant)
+            details = get_merchant_details(merchant)
 
             amount = float(match.group(4).replace(",", ""))
 
