@@ -1,5 +1,5 @@
 from services.database import get_connection; 
-conn=get_connection();
+conn=get_connection(); 
 cur=conn.cursor(); 
-cur.execute('SELECT COUNT(*) FROM merchant_master'); 
-print(cur.fetchone()[0]); conn.close()
+cur.execute('PRAGMA table_info(merchant_master)'); 
+[print(row) for row in cur.fetchall()]; conn.close()

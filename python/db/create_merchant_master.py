@@ -1,13 +1,4 @@
-try:
-    from services.database import get_connection
-except Exception:
-    # Support running this script directly (not as a package)
-    import sys
-    from pathlib import Path
-
-    # Add the 'python' package directory to sys.path so 'services' can be imported
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from services.database import get_connection
+from services.database import get_connection  # type: ignore[import]
 
 
 def create_merchant_master():
@@ -18,21 +9,19 @@ def create_merchant_master():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS merchant_master (
 
-        merchant_name TEXT PRIMARY KEY,
+        keyword TEXT PRIMARY KEY,
 
         normalized_name TEXT NOT NULL,
 
-        category TEXT,
-
-        sub_category TEXT,
+        category TEXT NOT NULL,
 
         merchant_type TEXT,
 
+        notes TEXT,
+
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-        is_active INTEGER DEFAULT 1,
-
-        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
