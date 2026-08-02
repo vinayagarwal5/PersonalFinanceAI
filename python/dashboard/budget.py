@@ -1,11 +1,10 @@
 import os
 import sys
 
-import pandas as pd
 import streamlit as st
 
 # ---------------------------------------------------------
-# Add project root
+# Add Project Root
 # ---------------------------------------------------------
 
 CURRENT_DIR = os.path.dirname(__file__)
@@ -14,7 +13,21 @@ PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
+# ---------------------------------------------------------
+# Imports
+# ---------------------------------------------------------
+
 from services.budget_service import BudgetService
+
+from components.page_header import show_page_header
+from components.metric_cards import show_metric_cards
+from components.budget_table import show_budget_table
+from components.progress_cards import show_progress
+
+
+# ---------------------------------------------------------
+# Budget Page
+# ---------------------------------------------------------
 
 
 def show_budget():
@@ -22,104 +35,137 @@ def show_budget():
     budget_service = BudgetService()
 
     try:
-        st.title("💰 Budget Planner")
+        # =====================================================
+        # PAGE HEADER
+        # =====================================================
 
-        st.caption("Set monthly budgets and track actual spending")
+        show_page_header(
+            "💰 Budget Planner",
+            "Plan your monthly spending and monitor budget performance",
+        )
+
+        # =====================================================
+        # MONTH SELECTOR
+        # =====================================================
+
+        months = budget_service.get_months()
+
+        if not months:
+            st.warning("No transaction months found.")
+
+            return
+
+        selected_month = st.selectbox("Select Month", months, index=0)
+
+        # =====================================================
+        # SUMMARY
+        # =====================================================
+
+        summary = budget_service.budget_summary(selected_month)
+
+        show_metric_cards(summary)
 
         st.divider()
 
-        # -------------------------------------------------
-        # Budget Entry
-        # -------------------------------------------------
+        # =====================================================
+        # ADD / UPDATE BUDGET
+        # =====================================================
 
         st.subheader("➕ Add / Update Budget")
 
         categories = budget_service.get_categories()
 
-        month = st.selectbox(
-            "Month",
-            sorted(
-                pd.date_range("2026-01-01", periods=24, freq="MS").strftime("%Y-%m"),
-                reverse=True,
-            ),
+        with st.form("budget_form"):
+            category = st.selectbox("Category", categories)
+
+            amount = st.number_input(
+                "Budget Amount (₹)", min_value=0.0, step=500.0, format="%.2f"
+            )
+
+            submitted = st.form_submit_button("💾 Save Budget")
+
+            if submitted:
+                budget_service.save_budget(selected_month, category, amount)
+
+                st.success(f"Budget saved for {category}")
+
+                st.rerun()
+
+        st.divider()
+
+        # =====================================================
+        # BUDGET DATA
+        # =====================================================
+
+        budget_df = budget_service.budget_vs_actual(selected_month)
+
+        if budget_df.empty:
+            st.info("No budgets configured for this month.")
+
+            return
+            # =====================================================
+        # BUDGET SUMMARY TABLE
+        # =====================================================
+
+        edited_df = show_budget_table(budget_df)
+
+        st.divider()
+
+        # =====================================================
+        # PROGRESS SECTION
+        # =====================================================
+
+        show_progress(budget_df)
+
+        st.divider()
+
+        # =====================================================
+        # DELETE BUDGET
+        # =====================================================
+
+        st.subheader("🗑 Delete Budget")
+
+        delete_category = st.selectbox(
+            "Select Category", budget_df["category"].tolist(), key="delete_category"
         )
 
-        category = st.selectbox("Category", categories)
+        if st.button("Delete Budget", type="secondary"):
+            budget_service.delete_budget(selected_month, delete_category)
 
-        amount = st.number_input(
-            "Budget Amount (₹)", min_value=0.0, step=500.0, format="%.2f"
-        )
-
-        if st.button("💾 Save Budget"):
-            budget_service.save_budget(month, category, amount)
-
-            st.success("Budget saved successfully.")
+            st.success(f"{delete_category} budget deleted.")
 
             st.rerun()
 
         st.divider()
 
-        # -------------------------------------------------
-        # Budget Overview
-        # -------------------------------------------------
+        # =====================================================
+        # BUDGET STATISTICS
+        # =====================================================
 
-        st.subheader("📊 Budget vs Actual")
+        st.subheader("📌 Budget Statistics")
 
-        selected_month = st.selectbox(
-            "View Month",
-            sorted(
-                pd.date_range("2026-01-01", periods=24, freq="MS").strftime("%Y-%m"),
-                reverse=True,
-            ),
-            key="view_month",
-        )
+        col1, col2, col3 = st.columns(3)
 
-        df = budget_service.budget_vs_actual(selected_month)
+        with col1:
+            st.metric("Categories", len(budget_df))
 
-        if df.empty:
-            st.info("No budgets created for this month.")
+        with col2:
+            within_budget = len(budget_df[budget_df["status"] == "🟢 Within Budget"])
 
-            return
+            st.metric("Within Budget", within_budget)
 
-        # -------------------------------------------------
-        # Progress
-        # -------------------------------------------------
+        with col3:
+            over_budget = len(budget_df[budget_df["status"] == "🔴 Over Budget"])
 
-        for _, row in df.iterrows():
-            budget = float(row["budget_amount"])
-            actual = float(row["actual"])
-            remaining = float(row["remaining"])
-
-            percent = 0 if budget == 0 else actual / budget
-
-            if percent < 0.8:
-                status = "🟢 Within Budget"
-
-            elif percent <= 1:
-                status = "🟡 Near Limit"
-
-            else:
-                status = "🔴 Over Budget"
-
-            st.markdown(f"### {row['category']}")
-
-            col1, col2, col3, col4 = st.columns(4)
-
-            col1.metric("Budget", f"₹{budget:,.0f}")
-
-            col2.metric("Actual", f"₹{actual:,.0f}")
-
-            col3.metric("Remaining", f"₹{remaining:,.0f}")
-
-            col4.metric("Status", status)
-
-            st.progress(min(percent, 1.0))
-
-            st.divider()
+            st.metric("Over Budget", over_budget)
 
     finally:
         budget_service.close()
 
+
+# ---------------------------------------------------------
+# Main
+# ---------------------------------------------------------
 
 if __name__ == "__main__":
     st.set_page_config(page_title="Budget Planner", page_icon="💰", layout="wide")
