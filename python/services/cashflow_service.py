@@ -1,6 +1,11 @@
 from services.base_service import BaseService
 import pandas as pd
 
+from utils.constant import (
+    TRANSACTION_DEBIT,
+    TRANSACTION_CREDIT,
+)
+
 
 class CashFlowService(BaseService):
     # ---------------------------------------------------------
@@ -16,7 +21,7 @@ class CashFlowService(BaseService):
 
             SUM(
                 CASE
-                    WHEN transaction_type='Debit'
+                    WHEN transaction_type='{TRANSACTION_DEBIT}'
                     THEN amount
                     ELSE 0
                 END
