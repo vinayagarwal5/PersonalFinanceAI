@@ -13,6 +13,8 @@ if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
 from analytics.analytics_service import AnalyticsService
+from components.kpi_cards import render_kpi_cards
+from components.insight_cards import render_insights
 
 
 def show_home():
@@ -20,9 +22,8 @@ def show_home():
     analytics = AnalyticsService()
 
     try:
-
         # =====================================================
-        # PAGE HEADER
+        # HEADER
         # =====================================================
 
         st.title("💰 Personal Finance AI")
@@ -37,54 +38,26 @@ def show_home():
 
         total_spending = analytics.total_spending()
         total_income = analytics.total_income()
-        balance = analytics.current_balance()
+        net_cashflow = analytics.current_balance()
         total_transactions = analytics.total_transactions()
 
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-            st.metric(
-                "💸 Total Spending",
-                f"₹{total_spending:,.2f}"
-            )
-
-        with col2:
-            st.metric(
-                "💰 Total Income",
-                f"₹{total_income:,.2f}"
-            )
-
-        with col3:
-            st.metric(
-                "🏦 Net Balance",
-                f"₹{balance:,.2f}"
-            )
-
-        with col4:
-            st.metric(
-                "🧾 Transactions",
-                total_transactions
-            )
+        render_kpi_cards(total_spending, total_income, net_cashflow, total_transactions)
 
         st.divider()
 
         # =====================================================
-        # MONTHLY TREND
+        # MONTHLY SPENDING
         # =====================================================
 
-        st.subheader("📈 Monthly Spending Trend")
+        st.subheader("📈 Monthly Spending")
 
         monthly_df = analytics.monthly_spending_df()
 
-        if not monthly_df.empty:
-
-            chart_df = monthly_df.set_index("month")
-
-            st.line_chart(chart_df)
+        if monthly_df.empty:
+            st.info("No monthly spending available.")
 
         else:
-
-            st.info("No monthly spending data found.")
+            st.line_chart(monthly_df.set_index("month"))
 
         st.divider()
 
@@ -92,21 +65,15 @@ def show_home():
         # CATEGORY SPENDING
         # =====================================================
 
-        st.subheader("🥧 Spending by Category")
+        st.subheader("🥧 Category Spending")
 
         category_df = analytics.spending_by_category()
 
-        if not category_df.empty:
-
-            st.dataframe(
-                category_df,
-                use_container_width=True,
-                hide_index=True
-            )
+        if category_df.empty:
+            st.info("No category spending found.")
 
         else:
-
-            st.info("No category data available.")
+            st.dataframe(category_df, use_container_width=True, hide_index=True)
 
         st.divider()
 
@@ -118,11 +85,7 @@ def show_home():
 
         merchant_df = analytics.top_merchants()
 
-        st.dataframe(
-            merchant_df,
-            use_container_width=True,
-            hide_index=True
-        )
+        st.dataframe(merchant_df, use_container_width=True, hide_index=True)
 
         st.divider()
 
@@ -134,23 +97,17 @@ def show_home():
 
         recent_df = analytics.recent_transactions()
 
-        st.dataframe(
-            recent_df,
-            use_container_width=True,
-            hide_index=True
-        )
+        st.dataframe(recent_df, use_container_width=True, hide_index=True)
+
+        st.divider()
+
+        render_insights(total_spending, total_income, category_df, merchant_df)
 
     finally:
-
         analytics.close()
 
 
 if __name__ == "__main__":
-
-    st.set_page_config(
-        page_title="Personal Finance AI",
-        page_icon="💰",
-        layout="wide"
-    )
+    st.set_page_config(page_title="Personal Finance AI", page_icon="💰", layout="wide")
 
     show_home()
