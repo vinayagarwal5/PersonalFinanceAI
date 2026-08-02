@@ -16,7 +16,7 @@ class CashFlowService(BaseService):
 
             SUM(
                 CASE
-                    WHEN transaction_type='Expense'
+                    WHEN transaction_type='Debit'
                     THEN amount
                     ELSE 0
                 END
@@ -24,7 +24,7 @@ class CashFlowService(BaseService):
 
             SUM(
                 CASE
-                    WHEN transaction_type='Income'
+                    WHEN transaction_type='Credit'
                     THEN amount
                     ELSE 0
                 END
@@ -42,14 +42,20 @@ class CashFlowService(BaseService):
         if df.empty:
             return df
 
+        df["expenses"] = df["expenses"].fillna(0)
+
+        df["income"] = df["income"].fillna(0)
+
         df["savings"] = df["income"] - df["expenses"]
 
-        df["saving_rate"] = (df["savings"] / df["income"] * 100).fillna(0).round(2)
+        df["saving_rate"] = (
+            ((df["savings"] / df["income"].replace(0, pd.NA)) * 100).fillna(0).round(2)
+        )
 
         return df
 
     # ---------------------------------------------------------
-    # Monthly Summary
+    # Latest Month Summary
     # ---------------------------------------------------------
 
     def summary(self):
@@ -57,15 +63,20 @@ class CashFlowService(BaseService):
         df = self.monthly_cashflow()
 
         if df.empty:
-            return {"income": 0, "expenses": 0, "savings": 0, "saving_rate": 0}
+            return {
+                "income": 0,
+                "expenses": 0,
+                "savings": 0,
+                "saving_rate": 0,
+            }
 
-        latest = df.iloc[-1]
+        latest = df.sort_values("month").iloc[-1]
 
         return {
-            "income": latest["income"],
-            "expenses": latest["expenses"],
-            "savings": latest["savings"],
-            "saving_rate": latest["saving_rate"],
+            "income": float(latest["income"]),
+            "expenses": float(latest["expenses"]),
+            "savings": float(latest["savings"]),
+            "saving_rate": float(latest["saving_rate"]),
         }
 
     # ---------------------------------------------------------
