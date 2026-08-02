@@ -3,6 +3,8 @@ import streamlit as st
 
 def show_metric_cards(summary):
 
+    remaining = summary["remaining"]
+
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -12,7 +14,12 @@ def show_metric_cards(summary):
         st.metric("💸 Actual Spend", f"₹{summary['actual']:,.0f}")
 
     with col3:
-        st.metric("🏦 Remaining", f"₹{summary['remaining']:,.0f}")
+        delta = ""
+
+        if remaining < 0:
+            delta = "Over Budget"
+
+        st.metric("🏦 Remaining", f"₹{remaining:,.0f}", delta=delta)
 
     with col4:
         st.metric("📊 Budget Used", f"{summary['usage']:.1f}%")
